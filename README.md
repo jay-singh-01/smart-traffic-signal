@@ -29,49 +29,46 @@ smart-traffic-signal/
 │
 └── utils/              # (Optional) helper functions in future
     └── __init__.py
-Setup & Installation
-Clone the repo:
+
+
+
+## Setup & Installation :-
+
+1. Clone the repo:
 
 bash
-Copy
-Edit
 git clone https://github.com/yourusername/smart-traffic-signal.git
 cd smart-traffic-signal
-Create a virtual environment (recommended):
+
+2. Create a virtual environment (recommended):
 
 bash
-Copy
-Edit
 python -m venv .venv
 source .venv/bin/activate   # Mac/Linux
 .venv\Scripts\activate      # Windows
-Install dependencies:
+
+3. Install dependencies:
 
 bash
-Copy
-Edit
 pip install -r requirements.txt
-Running the Project
+
+4. Running the Project
+
 Local Demo (OpenCV)
-
 bash
-Copy
-Edit
 python main.py
-Streamlit Web App
+
+5. Streamlit Web App
 
 bash
-Copy
-Edit
 streamlit run app.py
-Example Output
-Counts vehicles in video frames
 
-Displays adaptive traffic signal state (RED/GREEN)
+## Example Output:-
 
-Shows processed video in real time
+> Counts vehicles in video frames
+> Displays adaptive traffic signal state (RED/GREEN)
+> Shows processed video in real time
 
-Future Enhancements
-Integrate with live traffic camera feed
-
-Add database/API for smart city integration
+## Future Enhancements:-
+> Integrate with live traffic camera feed
+> Add database/API for smart city integration
