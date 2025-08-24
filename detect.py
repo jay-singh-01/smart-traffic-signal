@@ -4,9 +4,13 @@ import cv2
 import cvzone
 
 # ------------------------------
-# Load YOLO model
+# Load YOLO model (auto-downloads if not found)
 # ------------------------------
-def load_model(model_path="weights/yolov8n.pt"):
+def load_model(model_path="yolov8n.pt"):
+    """
+    Loads a YOLOv8 model.
+    If the weights are not found locally, they will be downloaded automatically.
+    """
     return YOLO(model_path)
 
 # ------------------------------
@@ -26,7 +30,7 @@ def detect_vehicles(frame, model, class_filter=None, conf_threshold=0.3):
         frame: frame with bounding boxes drawn
         count: number of detected vehicles
     """
-    results = model(frame)
+    results = model(frame, verbose=False)
     count = 0
     classNames = model.names
 
@@ -39,8 +43,14 @@ def detect_vehicles(frame, model, class_filter=None, conf_threshold=0.3):
 
             if (class_filter is None or label in class_filter) and conf > conf_threshold:
                 count += 1
-                cvzone.cornerRect(frame, (x1, y1, x2 - x1, y2 - y1), l=8)
-                cvzone.putTextRect(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
-                                   scale=1, thickness=2, offset=3)
+                cvzone.cornerRect(frame, (x1, y1, x2 - x1, y2 - y1), l=8, rt=2)
+                cvzone.putTextRect(
+                    frame,
+                    f"{label} {conf:.2f}",
+                    (x1, y1 - 10),
+                    scale=1,
+                    thickness=2,
+                    offset=3
+                )
 
     return frame, count
