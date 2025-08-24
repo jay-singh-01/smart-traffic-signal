@@ -1,36 +1,27 @@
-# detect.py
 from ultralytics import YOLO
 import cv2
 import cvzone
+import os
+import urllib.request
 
 # ------------------------------
-# Load YOLO model (auto-downloads if not found)
+# Load YOLO model
 # ------------------------------
-def load_model(model_path="yolov8n.pt"):
-    """
-    Loads a YOLOv8 model.
-    If the weights are not found locally, they will be downloaded automatically.
-    """
+def load_model(model_path="weights/yolov8n.pt"):
+    os.makedirs("weights", exist_ok=True)
+    if not os.path.exists(model_path):
+        # Download YOLOv8n weights if missing
+        url = "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt"
+        print(f"🔽 Downloading YOLOv8n weights from {url}...")
+        urllib.request.urlretrieve(url, model_path)
+        print("✅ Download complete.")
     return YOLO(model_path)
 
 # ------------------------------
 # Detect vehicles in a frame
 # ------------------------------
 def detect_vehicles(frame, model, class_filter=None, conf_threshold=0.3):
-    """
-    Detects vehicles in a frame using YOLO model.
-
-    Args:
-        frame: Input video frame
-        model: YOLO model object
-        class_filter: list of allowed class names (e.g., ["car", "truck", "bus"])
-        conf_threshold: minimum confidence threshold
-
-    Returns:
-        frame: frame with bounding boxes drawn
-        count: number of detected vehicles
-    """
-    results = model(frame, verbose=False)
+    results = model(frame)
     count = 0
     classNames = model.names
 
@@ -43,14 +34,8 @@ def detect_vehicles(frame, model, class_filter=None, conf_threshold=0.3):
 
             if (class_filter is None or label in class_filter) and conf > conf_threshold:
                 count += 1
-                cvzone.cornerRect(frame, (x1, y1, x2 - x1, y2 - y1), l=8, rt=2)
-                cvzone.putTextRect(
-                    frame,
-                    f"{label} {conf:.2f}",
-                    (x1, y1 - 10),
-                    scale=1,
-                    thickness=2,
-                    offset=3
-                )
+                cvzone.cornerRect(frame, (x1, y1, x2 - x1, y2 - y1), l=8)
+                cvzone.putTextRect(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
+                                   scale=1, thickness=2, offset=3)
 
     return frame, count
