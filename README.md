@@ -9,6 +9,10 @@ and control traffic lights adaptively based on real-time traffic density.
 - Adaptive traffic light switching  
 - Streamlit web app for demo  
 
+## LIVE LINK
+https://smart-traffic-signal-01.streamlit.app/
+
+
 ## Setup & Installation :-
 
 1. Clone the repo:
@@ -72,3 +76,4 @@ smart-traffic-signal/
 │
 └── utils/              # (Optional) helper functions in future
     └── __init__.py
+
