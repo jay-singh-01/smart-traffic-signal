@@ -7,7 +7,6 @@ import cvzone
 import numpy as np
 from detect import load_model, detect_vehicles
 
-
 # Compatibility function for different Streamlit versions
 def display_image_safe(container, image):
     """Safe image display that works with different Streamlit versions"""
@@ -17,7 +16,6 @@ def display_image_safe(container, image):
     except TypeError:
         # Fallback for older versions
         container.image(image)
-
 
 # Page config (wide layout)
 st.set_page_config(page_title="Smart Traffic Signal", layout="wide")
@@ -64,13 +62,13 @@ elif video_option == "Use sample video (Traffic_Flow.mp4)":
         video_file = sample_path
         st.success("✅ Using sample video: Traffic_Flow.mp4")
     else:
-        st.error(
-            "❌ Sample video not found at data/Traffic_Flow.mp4. Please ensure the file exists or upload your own video.")
+        st.error("❌ Sample video not found at data/Traffic_Flow.mp4. Please ensure the file exists or upload your own video.")
 
 if video_file and not st.session_state.processing:
     if st.button("🚀 Start Processing"):
         st.session_state.processing = True
         st.rerun()
+
 
 if video_file and st.session_state.processing:
     col1, col2 = st.columns([2, 1])
@@ -144,7 +142,7 @@ if video_file and st.session_state.processing:
             if total_frames > 0:
                 progress = frame_count / total_frames
                 progress_bar.progress(progress)
-                progress_text.text(f"Processing frame {frame_count}/{total_frames} ({progress * 100:.1f}%)")
+                progress_text.text(f"Processing frame {frame_count}/{total_frames} ({progress*100:.1f}%)")
 
             # Resize frame
             frame = cv2.resize(frame, (width, height))
@@ -155,7 +153,7 @@ if video_file and st.session_state.processing:
                 class_filter=["car", "truck", "bus", "motorcycle"],
                 conf_threshold=CONF_THRESHOLD
             )
-
+            
             # Only count vehicles for signal logic every N frames (for performance)
             if frame_count % PROCESS_EVERY_N_FRAMES == 0:
                 st.session_state.total_vehicle_count += count
