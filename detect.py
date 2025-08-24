@@ -18,27 +18,21 @@ def load_model(model_path="weights/yolov8n.pt"):
 
         # Download model if it doesn't exist
         if not os.path.exists(model_path):
-            st.info("🔄 Downloading YOLOv8n model weights (first time only)...")
-            url = "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt"
+            with st.spinner("🔄 Downloading YOLOv8n model weights (first time only)..."):
+                url = "https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt"
 
-            try:
-                # Show download progress
-                def download_progress(block_num, block_size, total_size):
-                    downloaded = block_num * block_size
-                    if total_size > 0:
-                        percent = min(100, (downloaded * 100) / total_size)
-                        st.progress(percent / 100, f"Downloading... {percent:.1f}%")
+                try:
+                    # Download without showing progress bars to avoid multiple bars
+                    urllib.request.urlretrieve(url, model_path)
+                    st.success("✅ Model downloaded successfully!")
 
-                urllib.request.urlretrieve(url, model_path, reporthook=download_progress)
-                st.success("✅ Model downloaded successfully!")
+                except Exception as download_error:
+                    st.error(f"❌ Failed to download model: {download_error}")
+                    st.info("Please manually download yolov8n.pt to the weights/ folder")
+                    raise download_error
 
-            except Exception as download_error:
-                st.error(f"❌ Failed to download model: {download_error}")
-                st.info("Please manually download yolov8n.pt to the weights/ folder")
-                raise download_error
-
-        # Load the model
-        model = YOLO(model_path)
+        # Load the model (suppress YOLO verbose output)
+        model = YOLO(model_path, verbose=False)
 
         # Verify model loaded correctly
         if hasattr(model, 'names'):

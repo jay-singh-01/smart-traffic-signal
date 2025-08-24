@@ -57,12 +57,13 @@ if video_option == "Upload your own video":
     uploaded_file = st.file_uploader("📂 Upload a traffic video", type=["mp4", "avi", "mov"])
     video_file = uploaded_file
 elif video_option == "Use sample video (Traffic_Flow.mp4)":
+    # Fixed: Use the same path as main.py
     sample_path = "data/Traffic_Flow.mp4"
     if os.path.exists(sample_path):
         video_file = sample_path
         st.success("✅ Using sample video: Traffic_Flow.mp4")
     else:
-        st.error("❌ Sample video not found. Please upload your own video.")
+        st.error("❌ Sample video not found at data/Traffic_Flow.mp4. Please ensure the file exists or upload your own video.")
 
 if video_file and not st.session_state.processing:
     if st.button("🚀 Start Processing"):
@@ -93,9 +94,8 @@ if video_file and st.session_state.processing:
             filename = video_file.name
 
     try:
-        # Load YOLO model
-        with st.spinner("🤖 Loading YOLO model..."):
-            model = load_model()
+        # Load YOLO model - this will now show cleaner loading without multiple progress bars
+        model = load_model()
 
         cap = cv2.VideoCapture(temp_file_path)
 
@@ -117,7 +117,7 @@ if video_file and st.session_state.processing:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
-        # Progress tracking
+        # Progress tracking - single clean progress bar
         progress_bar = st.progress(0)
         progress_text = st.empty()
 
@@ -139,11 +139,11 @@ if video_file and st.session_state.processing:
 
             frame_count += 1
 
-            # Update progress
+            # Update progress - cleaner single progress bar
             if total_frames > 0:
                 progress = frame_count / total_frames
                 progress_bar.progress(progress)
-                progress_text.text(f"Processing frame {frame_count}/{total_frames}")
+                progress_text.text(f"Processing frame {frame_count}/{total_frames} ({progress*100:.1f}%)")
 
             # Resize frame
             frame = cv2.resize(frame, (width, height))
@@ -172,16 +172,6 @@ if video_file and st.session_state.processing:
                     if count >= VEHICLE_THRESHOLD:
                         st.session_state.signal_state = "GREEN"
                         st.session_state.green_start_time = time.time()
-
-                # Prepare display info
-                signal_color = (0, 255, 0) if st.session_state.signal_state == "GREEN" else (0, 0, 255)
-                status_text = f"Signal: {st.session_state.signal_state}"
-
-                if (st.session_state.signal_state == "GREEN" and
-                        st.session_state.green_start_time):
-                    remaining = GREEN_SIGNAL_DURATION - int(current_time - st.session_state.green_start_time)
-                    remaining = max(0, remaining)
-                    status_text += f" ({remaining}s)"
 
             # Add overlays to frame (even on non-processed frames)
             try:
@@ -213,10 +203,9 @@ if video_file and st.session_state.processing:
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             # Update live preview (every few frames for performance)
-            # FIXED: This is the line that was causing the error
             if frame_count % (PROCESS_EVERY_N_FRAMES * 2) == 0:
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                display_image_safe(stframe, frame_rgb)  # Using safe function
+                display_image_safe(stframe, frame_rgb)
 
             # Update statistics
             if frame_count % PROCESS_EVERY_N_FRAMES == 0:
