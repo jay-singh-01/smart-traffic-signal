@@ -19,7 +19,6 @@ Thumbs.db
 
 # Large model files & datasets
 weights/
-data/
 Outputs/
 
 # Logs
