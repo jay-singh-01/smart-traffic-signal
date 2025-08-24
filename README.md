@@ -9,29 +9,6 @@ and control traffic lights adaptively based on real-time traffic density.
 - Adaptive traffic light switching  
 - Streamlit web app for demo  
 
-## Project Structure
-```plaintext
-smart-traffic-signal/
-├── app.py              # Streamlit web app (frontend + UI)
-├── main.py             # Local demo (OpenCV fullscreen mode)
-├── detect.py           # YOLO-based vehicle detection logic
-├── requirements.txt    # Dependencies list
-├── README.md           # Project documentation
-│
-├── data/               # Input video samples
-│   └── TrafficFlow.mp4
-│
-├── outputs/            # Processed output videos/images
-│   └── sample_output.mp4
-│
-├── weights/            # Pre-trained YOLO weights
-│   └── yolov8n.pt
-│
-└── utils/              # (Optional) helper functions in future
-    └── __init__.py
-
-
-
 ## Setup & Installation :-
 
 1. Clone the repo:
@@ -53,8 +30,8 @@ bash
 pip install -r requirements.txt
 
 4. Running the Project
-
 Local Demo (OpenCV)
+
 bash
 python main.py
 
@@ -65,10 +42,33 @@ streamlit run app.py
 
 ## Example Output:-
 
-> Counts vehicles in video frames
-> Displays adaptive traffic signal state (RED/GREEN)
-> Shows processed video in real time
+* Counts vehicles in video frames
+* Displays adaptive traffic signal state (RED/GREEN)
+* Shows processed video in real time
 
 ## Future Enhancements:-
-> Integrate with live traffic camera feed
-> Add database/API for smart city integration
+
+* Integrate with live traffic camera feed
+* Add database/API for smart city integration
+
+
+## Project Structure
+```plaintext
+smart-traffic-signal/
+├── app.py              # Streamlit web app (frontend + UI)
+├── main.py             # Local demo (OpenCV fullscreen mode)
+├── detect.py           # YOLO-based vehicle detection logic
+├── requirements.txt    # Dependencies list
+├── README.md           # Project documentation
+│
+├── data/               # Input video samples
+│   └── TrafficFlow.mp4
+│
+├── outputs/            # Processed output videos/images
+│   └── sample_output.mp4
+│
+├── weights/            # Pre-trained YOLO weights
+│   └── yolov8n.pt
+│
+└── utils/              # (Optional) helper functions in future
+    └── __init__.py
