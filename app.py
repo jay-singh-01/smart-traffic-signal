@@ -7,7 +7,6 @@ import cvzone
 import numpy as np
 from detect import load_model, detect_vehicles
 
-
 # Compatibility function for different Streamlit versions
 def display_image_safe(container, image):
     """Safe image display that works with different Streamlit versions"""
@@ -17,7 +16,6 @@ def display_image_safe(container, image):
     except TypeError:
         # Fallback for older versions
         container.image(image)
-
 
 # Page config (wide layout)
 st.set_page_config(page_title="Smart Traffic Signal", layout="wide")
@@ -36,22 +34,6 @@ VEHICLE_THRESHOLD = st.sidebar.slider("Vehicle Threshold for Green Signal", 1, 5
 GREEN_SIGNAL_DURATION = st.sidebar.slider("Green Signal Duration (seconds)", 5, 30, 15)
 PROCESS_EVERY_N_FRAMES = st.sidebar.slider("Process every N frames (for speed)", 1, 10, 3)
 CONF_THRESHOLD = st.sidebar.slider("Detection Confidence", 0.1, 1.0, 0.3, 0.1)
-
-# NEW: Display optimization settings
-st.sidebar.header("📺 Display Settings")
-DISPLAY_UPDATE_INTERVAL = st.sidebar.slider("Display update interval (frames)", 1, 20, 5,
-                                            help="Higher = smoother but less frequent updates")
-DISPLAY_QUALITY = st.sidebar.select_slider("Display quality",
-                                           options=["Fast", "Balanced", "High Quality"],
-                                           value="Balanced")
-
-# Map quality to compression settings
-quality_settings = {
-    "Fast": (640, 360, 70),
-    "Balanced": (960, 540, 80),
-    "High Quality": (1280, 720, 90)
-}
-display_width, display_height, jpeg_quality = quality_settings[DISPLAY_QUALITY]
 
 # Initialize session state
 if 'signal_state' not in st.session_state:
@@ -80,13 +62,13 @@ elif video_option == "Use sample video (Traffic_Flow.mp4)":
         video_file = sample_path
         st.success("✅ Using sample video: Traffic_Flow.mp4")
     else:
-        st.error(
-            "❌ Sample video not found at data/Traffic_Flow.mp4. Please ensure the file exists or upload your own video.")
+        st.error("❌ Sample video not found at data/Traffic_Flow.mp4. Please ensure the file exists or upload your own video.")
 
 if video_file and not st.session_state.processing:
     if st.button("🚀 Start Processing"):
         st.session_state.processing = True
         st.rerun()
+
 
 if video_file and st.session_state.processing:
     col1, col2 = st.columns([2, 1])
@@ -122,7 +104,7 @@ if video_file and st.session_state.processing:
             st.stop()
 
         # Get video properties
-        original_fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
+        fps = int(cap.get(cv2.CAP_PROP_FPS)) or 30
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         width, height = 1280, 720
 
@@ -132,24 +114,17 @@ if video_file and st.session_state.processing:
 
         # Video writer setup
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(out_path, fourcc, original_fps, (width, height))
+        out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
         # Progress tracking
         progress_bar = st.progress(0)
         progress_text = st.empty()
-        fps_text = st.empty()
 
         frame_count = 0
         processed_frames = 0
         start_time = time.time()
-        last_display_update = 0
 
-        # FPS calculation
-        fps_counter = 0
-        fps_start_time = time.time()
-        current_fps = 0
-
-        st.info(f"▶️ Processing video at {original_fps} FPS... Optimized for smooth playback!")
+        st.info("▶️ Processing video... Watch the live preview with detection boxes!")
 
         # Reset counters for new video
         st.session_state.signal_state = "RED"
@@ -162,22 +137,14 @@ if video_file and st.session_state.processing:
                 break
 
             frame_count += 1
-            fps_counter += 1
-
-            # Calculate FPS every second
-            if time.time() - fps_start_time >= 1.0:
-                current_fps = fps_counter / (time.time() - fps_start_time)
-                fps_counter = 0
-                fps_start_time = time.time()
 
             # Update progress
             if total_frames > 0:
                 progress = frame_count / total_frames
                 progress_bar.progress(progress)
-                progress_text.text(
-                    f"Frame {frame_count}/{total_frames} ({progress * 100:.1f}%) | Processing: {current_fps:.1f} FPS")
+                progress_text.text(f"Processing frame {frame_count}/{total_frames} ({progress*100:.1f}%)")
 
-            # Resize frame for processing
+            # Resize frame
             frame = cv2.resize(frame, (width, height))
 
             # Process detection every N frames
@@ -205,7 +172,7 @@ if video_file and st.session_state.processing:
                         st.session_state.signal_state = "GREEN"
                         st.session_state.green_start_time = time.time()
 
-            # Add overlays to frame
+            # Add overlays to frame (even on non-processed frames)
             try:
                 # Left side info
                 cvzone.putTextRect(frame, f"Frame Vehicles: {count}", (50, 60),
@@ -229,31 +196,18 @@ if video_file and st.session_state.processing:
                 cv2.putText(frame, status_text, (text_x, text_y),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, signal_color, 4)
 
-                # Add FPS counter to frame
-                cv2.putText(frame, f"FPS: {current_fps:.1f}", (50, height - 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
             except Exception as e:
                 # Fallback rendering
                 cv2.putText(frame, f"Vehicles: {count}", (50, 60),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            # OPTIMIZED: Update display less frequently but more smoothly
-            if frame_count % DISPLAY_UPDATE_INTERVAL == 0:
-                # Resize for display optimization
-                display_frame = cv2.resize(frame, (display_width, display_height))
-                frame_rgb = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
+            # Update live preview - ONLY change: slightly less frequent updates for better performance
+            if frame_count % max(1, PROCESS_EVERY_N_FRAMES // 2) == 0:
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                display_image_safe(stframe, frame_rgb)
 
-                # Compress image for faster transmission
-                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality]
-                _, buffer = cv2.imencode('.jpg', frame_rgb, encode_param)
-                frame_compressed = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
-
-                display_image_safe(stframe, frame_compressed)
-                last_display_update = frame_count
-
-            # Update statistics less frequently
-            if frame_count % (PROCESS_EVERY_N_FRAMES * 3) == 0:
+            # Update statistics
+            if frame_count % PROCESS_EVERY_N_FRAMES == 0:
                 with stats_placeholder.container():
                     col_a, col_b = st.columns(2)
                     with col_a:
@@ -275,15 +229,8 @@ if video_file and st.session_state.processing:
                     else:
                         st.error(f"🔴 RED SIGNAL")
 
-            # Write frame to output video (full quality)
+            # Write frame to output video
             out.write(frame)
-
-            # Control processing speed to match original FPS
-            if original_fps > 0:
-                expected_time = frame_count / original_fps
-                actual_time = time.time() - start_time
-                if actual_time < expected_time:
-                    time.sleep(min(0.001, expected_time - actual_time))
 
             # Safety break
             if frame_count > total_frames and total_frames > 0:
@@ -297,9 +244,7 @@ if video_file and st.session_state.processing:
         progress_text.text("✅ Processing complete!")
 
         total_elapsed = time.time() - start_time
-        avg_fps = frame_count / total_elapsed if total_elapsed > 0 else 0
-        st.success(
-            f"✅ Processing complete! Processed {processed_frames} frames in {total_elapsed:.1f} seconds (avg: {avg_fps:.1f} FPS)")
+        st.success(f"✅ Processing complete! Processed {processed_frames} frames in {total_elapsed:.1f} seconds")
 
         # Final statistics
         st.subheader("📈 Final Results")
@@ -311,7 +256,7 @@ if video_file and st.session_state.processing:
         with col3:
             st.metric("Final Signal", st.session_state.signal_state)
         with col4:
-            st.metric("Avg FPS", f"{avg_fps:.1f}")
+            st.metric("Processing Time", f"{total_elapsed:.1f}s")
 
         # Show processed video
         if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
@@ -357,7 +302,7 @@ if st.sidebar.button("🔄 Reset All"):
     st.rerun()
 
 # Information section
-with st.expander("ℹ️ How it works & Performance Tips"):
+with st.expander("ℹ️ How it works"):
     st.markdown("""
     **Smart Traffic Signal Logic:**
     1. **Vehicle Detection**: Uses YOLOv8 to detect cars, trucks, buses, and motorcycles
@@ -368,16 +313,15 @@ with st.expander("ℹ️ How it works & Performance Tips"):
        - Returns to RED after timer expires
     3. **Performance**: Processes every N frames to balance accuracy vs speed
 
-    **Performance Optimization:**
-    - **Display Update Interval**: Controls how often the video display refreshes
-    - **Display Quality**: Balances visual quality with performance
-    - **Frame Processing**: Only processes every N frames for detection
-    - **Compression**: Images are compressed before display for faster loading
+    **Pink Detection Boxes:**
+    - Pink boxes show real-time vehicle detection
+    - Confidence scores displayed on each detection
+    - Only vehicles above threshold confidence are counted
 
-    **For Smoother Playback:**
-    - Use "Fast" display quality for better responsiveness
-    - Increase display update interval for less frequent but smoother updates
-    - Lower detection frame interval for faster processing
+    **Controls:**
+    - Adjust vehicle threshold and green signal duration in sidebar
+    - Use sample video or upload your own
+    - Download processed video with detections and signal states
     """)
 
 if not video_file:
